@@ -134,9 +134,17 @@
   }
   .card.open{box-shadow:0 4px 16px rgba(0,0,0,.1)}
   .head{
-    display:block;width:100%;padding:13px 14px;
+    position:relative;display:block;
+    width:100%;padding:13px 108px 13px 14px;
     border:0;background:none;text-align:left;cursor:pointer;color:inherit;
   }
+  .info{display:block;min-width:0}
+  .thumb{
+    position:absolute;top:13px;right:13px;bottom:13px;width:88px;
+    border-radius:9px;overflow:hidden;background:#f1f1f1;
+    box-shadow:inset 0 0 0 1px rgba(0,0,0,.04);
+  }
+  .thumb img{width:100%;height:100%;object-fit:cover;object-position:center;display:block}
   .l1{display:flex;align-items:center;gap:8px;margin-bottom:6px}
   .id{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;color:#a5a5a5;letter-spacing:.4px}
   .cat{font-size:11px;color:var(--orange-dark);background:var(--orange-soft);padding:2px 8px;border-radius:999px;white-space:nowrap}
@@ -195,14 +203,15 @@
   }
 
   /* ============ 卡片工艺参数 ============ */
-  .tech{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:6px}
+  .tech{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin-top:6px}
   .tk{
-    font-size:12px;color:#666;background:#f6f6f6;
-    border:1px solid #ececec;border-radius:6px;padding:2px 7px;line-height:1.45;
+    font-size:11px;color:#666;background:#f6f6f6;
+    border:1px solid #ececec;border-radius:6px;padding:2px 5px;line-height:1.45;
+    white-space:nowrap;
   }
   .ref{
-    font-size:10px;color:#b3b3b3;border:1px dashed #ddd;border-radius:4px;
-    padding:1px 4px;line-height:1.35;
+    font-size:9px;color:#b3b3b3;border:1px dashed #ddd;border-radius:4px;
+    padding:1px 3px;line-height:1.4;white-space:nowrap;
   }
   .dnote{
     font-size:11px;color:#adadad;line-height:1.5;margin-top:8px;
@@ -261,7 +270,7 @@
     <div class="title-row">
       <div>
         <h1>喷涂数据参数库</h1>
-        <p class="sub">建筑功能涂层查询系统</p>
+        <p class="sub">特殊功能性涂层查询系统</p>
       </div>
       <button class="qr-trigger" id="qrOpen" type="button" aria-label="扫码查看本页">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round">
@@ -687,6 +696,42 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     });
   }
 
+  /* 卡片右侧场景配图（img/01-34.webp；同场景复用同一张，无对应照片时按类别兜底） */
+  var SCENE_IMG = {
+    '电子洁净厂房':'01','半导体百级车间':'02','集成电路车间':'03','ESD环氧地坪':'04',
+    '芯片加工车间':'05','SMT贴片车间':'06','电缆隧道':'07','钢结构防火喷涂':'08',
+    '电缆防火墙':'09','装配式防火墙':'10','防火电缆桥架':'11','电缆沟封堵':'12',
+    '危化品防爆仓':'13','化工防爆库':'14','危化品暂存间':'15','化学防爆库':'16',
+    '防爆改造现场':'17','化学品防爆柜':'18','电柜走廊':'19','高低压配电柜':'20',
+    '车间开关柜':'21','配电房变压器':'22','电池室':'23','模块化电力舱':'24'
+  };
+  var CAT_IMG = {
+    '防静电':'04','防火阻燃':'08','防爆抗爆':'13','绝缘导热':'20',
+    '防腐':'25','防水':'29','耐磨防滑':'32'
+  };
+  var IMG_RULES = [
+    [/室内膨胀型|室外厚型|钢结构防火/, '08'],
+    [/C5-M|C4高腐蚀/, '26'],
+    [/C2低腐蚀|C3中等腐蚀|C3环境|C5-I|镀锌钢/, '25'],
+    [/Im1/, '28'],
+    [/Im3/, '27'],
+    [/外露型|屋面/, '29'],
+    [/桥梁/, '30'],
+    [/外墙/, '31'],
+    [/地下室\/水池/, '28'],
+    [/地下工程\/隧道/, '07'],
+    [/中载仓库|重载防潮|一般耐磨/, '33'],
+    [/轻载车间|重载厂房/, '32'],
+    [/坡道|车库/, '34']
+  ];
+  function imgFor(d){
+    if(SCENE_IMG[d.scene]) return 'img/' + SCENE_IMG[d.scene] + '.webp';
+    for(var i=0;i<IMG_RULES.length;i++){
+      if(IMG_RULES[i][0].test(d.scene)) return 'img/' + IMG_RULES[i][1] + '.webp';
+    }
+    return 'img/' + (CAT_IMG[d.category] || '01') + '.webp';
+  }
+
   /* ---------- 渲染 ---------- */
   function cardHTML(d){
     var open = !!expanded[d.id];
@@ -706,13 +751,16 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     rowsHTML += '<div class="dnote">* 喷涂角度与压力为行业通用参考值，非国标强制；实际施工以设备与材料厂家说明为准。</div>';
     return '<article class="card'+(open?' open':'')+'" data-id="'+esc(d.id)+'">'
-      + '<button class="head" type="button" aria-expanded="'+(open?'true':'false')+'">'
-      +   '<span class="l1"><span class="id">'+esc(d.id)+'</span><span class="cat">'+esc(d.category)+'</span><span class="chev">▾</span></span>'
-      +   '<span class="scene">'+esc(d.scene)+'</span>'
-      +   '<span class="perf">'+esc(d.performance)+'</span>'
-      +   '<span class="tags"><span class="thk">'+esc(d.thickness)+'</span><span class="src">'+esc(d.source)+'</span></span>'
-      +   '<span class="tech"><span class="tk">角度 '+esc(shortVal(d.angle))+'</span><span class="tk">压力 '+esc(shortVal(d.pressure))+'</span><span class="ref">参考值</span></span>'
-      + '</button>'
+      + '<div class="head" role="button" tabindex="0" aria-expanded="'+(open?'true':'false')+'">'
+      +   '<span class="info">'
+      +     '<span class="l1"><span class="id">'+esc(d.id)+'</span><span class="cat">'+esc(d.category)+'</span><span class="chev">▾</span></span>'
+      +     '<span class="scene">'+esc(d.scene)+'</span>'
+      +     '<span class="perf">'+esc(d.performance)+'</span>'
+      +     '<span class="tags"><span class="thk">'+esc(d.thickness)+'</span><span class="src">'+esc(d.source)+'</span></span>'
+      +     '<span class="tech"><span class="tk">角度 '+esc(shortVal(d.angle))+'</span><span class="tk">压力 '+esc(shortVal(d.pressure))+'</span><span class="ref">参考值</span></span>'
+      +   '</span>'
+      +   '<span class="thumb"><img src="'+imgFor(d)+'" alt="'+esc(d.scene)+'" loading="lazy" decoding="async"></span>'
+      + '</div>'
       + '<div class="body"><div class="binner">'+rowsHTML+'</div></div>'
       + '</article>';
   }
@@ -732,9 +780,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
   }
 
-  listEl.addEventListener('click', function(e){
-    var head = e.target.closest ? e.target.closest('.head') : null;
-    if(!head) return;
+  function toggleCard(head){
     var card = head.parentNode;
     var body = card.querySelector('.body');
     var open = !card.classList.contains('open');
@@ -743,6 +789,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     body.style.maxHeight = open ? (body.firstElementChild.scrollHeight + 'px') : '0px';
     if(open) expanded[card.getAttribute('data-id')] = true;
     else delete expanded[card.getAttribute('data-id')];
+  }
+
+  listEl.addEventListener('click', function(e){
+    var head = e.target.closest ? e.target.closest('.head') : null;
+    if(head) toggleCard(head);
+  });
+  listEl.addEventListener('keydown', function(e){
+    if(e.key !== 'Enter' && e.key !== ' ') return;
+    var head = e.target.closest ? e.target.closest('.head') : null;
+    if(!head) return;
+    e.preventDefault();
+    toggleCard(head);
   });
 
   var rzTimer = null;
